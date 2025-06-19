@@ -1,42 +1,52 @@
-
-import pandas as pd
 from fpdf import FPDF
+import pandas as pd
 import os
 
 DATA_DIR = "data"
+PROYEK_CSV = os.path.join(DATA_DIR, "proyek.csv")
+KARYAWAN_CSV = os.path.join(DATA_DIR, "karyawan.csv")
 KEUANGAN_CSV = os.path.join(DATA_DIR, "keuangan.csv")
 
-def load_data(path):
-    if os.path.exists(path):
-        return pd.read_csv(path)
-    else:
-        return pd.DataFrame()
-
-def generate_keuangan_pdf(output_path="laporan_keuangan.pdf"):
-    df = load_data(KEUANGAN_CSV)
-    if df.empty:
-        return None
-
+# Fungsi umum ekspor PDF
+def export_to_pdf(title, df, output_path):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
-    pdf.cell(200, 10, txt="Laporan Keuangan", ln=True, align="C")
+    pdf.cell(200, 10, txt=title, ln=True, align="C")
     pdf.ln(10)
 
-    headers = ["Tanggal", "Jenis", "Kategori", "Jumlah", "Keterangan"]
-    col_widths = [30, 30, 30, 30, 60]
-
-    for header, width in zip(headers, col_widths):
-        pdf.cell(width, 10, header, border=1)
+    # Header
+    for col in df.columns:
+        pdf.cell(35, 10, str(col), border=1)
     pdf.ln()
 
+    # Data baris
     for _, row in df.iterrows():
-        pdf.cell(col_widths[0], 10, str(row['tanggal']), border=1)
-        pdf.cell(col_widths[1], 10, row['jenis'], border=1)
-        pdf.cell(col_widths[2], 10, row['kategori'], border=1)
-        pdf.cell(col_widths[3], 10, str(row['jumlah']), border=1)
-        pdf.cell(col_widths[4], 10, row['keterangan'], border=1)
+        for item in row:
+            pdf.cell(35, 10, str(item), border=1)
         pdf.ln()
 
     pdf.output(output_path)
     return output_path
+
+# Fungsi khusus tiap modul
+def generate_keuangan_pdf():
+    if os.path.exists(KEUANGAN_CSV):
+        df = pd.read_csv(KEUANGAN_CSV)
+        if not df.empty:
+            return export_to_pdf("Laporan Keuangan", df, "laporan_keuangan.pdf")
+    return None
+
+def generate_proyek_pdf():
+    if os.path.exists(PROYEK_CSV):
+        df = pd.read_csv(PROYEK_CSV)
+        if not df.empty:
+            return export_to_pdf("Laporan Proyek", df, "laporan_proyek.pdf")
+    return None
+
+def generate_karyawan_pdf():
+    if os.path.exists(KARYAWAN_CSV):
+        df = pd.read_csv(KARYAWAN_CSV)
+        if not df.empty:
+            return export_to_pdf("Laporan Karyawan", df, "laporan_karyawan.pdf")
+    return None

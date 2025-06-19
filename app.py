@@ -73,6 +73,66 @@ def halaman_proyek():
 
     st.dataframe(df)
 
+def halaman_karyawan():
+    st.title("👨‍💼 Data Karyawan")
+    df = load_data(KARYAWAN_CSV)
+
+    st.subheader("Tambah Karyawan Baru")
+    with st.form("form_karyawan"):
+        nama = st.text_input("Nama")
+        posisi = st.text_input("Posisi")
+        gaji = st.text_input("Gaji")
+        email = st.text_input("Email")
+        status = st.selectbox("Status", ["Aktif", "NonAktif"])
+        simpan = st.form_submit_button("Simpan")
+        if simpan:
+            new_row = {
+                "id": len(df) + 1,
+                "nama": nama,
+                "posisi": posisi,
+                'gaji' : gaji,
+                "email": email,
+                "status": status
+            }
+            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+            save_data(df, KARYAWAN_CSV)
+            st.success("✅ Karyawan berhasil ditambahkan!")
+
+    st.subheader("Daftar Karyawan")
+
+    if not df.empty:
+        df["index"] = df.index
+        selected_index = st.selectbox("Pilih baris untuk Edit/Hapus", df["index"])
+        selected_row = df[df["index"] == selected_index].iloc[0]
+
+        with st.expander("✏️ Edit Data Karyawan"):
+            with st.form("edit_karyawan"):
+                new_nama = st.text_input("Nama", selected_row["nama"])
+                new_posisi = st.text_input("Posisi", selected_row["posisi"])
+                new_gaji = st.text_input("Gaji", selected_row["gaji"])
+                new_email = st.text_input("Email", selected_row["email"])
+                new_status = st.selectbox("Status", ["Aktif", "NonAktif"], index=["Aktif", "NonAktif"].index(selected_row["status"]))
+                update = st.form_submit_button("Update")
+                if update:
+                    df.loc[selected_index, ["nama", "posisi", "gaji", "email", "status"]] = [
+                        new_nama, new_posisi, new_email, new_gaji, new_status
+                    ]
+                    save_data(df, KARYAWAN_CSV)
+                    st.success("✅ Data karyawan berhasil diperbarui!")
+
+        if st.button("🗑️ Hapus Karyawan Ini"):
+            df = df.drop(index=selected_index).reset_index(drop=True)
+            save_data(df, KARYAWAN_CSV)
+            st.success("✅ Data karyawan berhasil dihapus!")
+
+    st.dataframe(df)
+
+    if st.button("📄 Cetak PDF Laporan Karyawan"):
+        pdf_path = generate_karyawan_pdf()
+        if pdf_path and os.path.exists(pdf_path):
+            with open(pdf_path, "rb") as f:
+                st.download_button("⬇️ Download PDF", f, file_name="laporan_karyawan.pdf")
+
 
 # Halaman Keuangan
 def halaman_keuangan():
@@ -144,6 +204,6 @@ halaman = st.sidebar.radio("Pilih Menu", ["📁 Proyek", "👨‍💼 Karyawan",
 if halaman == "📁 Proyek":
     halaman_proyek()
 elif halaman == "👨‍💼 Karyawan":
-    st.write("Halaman Karyawan (coming soon)")
+    halaman_karyawan()
 elif halaman == "💰 Keuangan":
     halaman_keuangan()
