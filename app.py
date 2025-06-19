@@ -1,7 +1,9 @@
+# File: app.py
+
 import streamlit as st
 import pandas as pd
 import os
-from utils import generate_keuangan_pdf
+from utils import generate_keuangan_pdf, generate_karyawan_pdf, generate_proyek_pdf
 
 # Path file CSV
 DATA_DIR = "data"
@@ -44,7 +46,6 @@ def halaman_proyek():
             st.success("✅ Proyek berhasil ditambahkan!")
 
     st.subheader("Daftar Proyek")
-
     if not df.empty:
         df["index"] = df.index
         selected_index = st.selectbox("Pilih Proyek untuk Edit/Hapus", df["index"])
@@ -52,11 +53,12 @@ def halaman_proyek():
 
         with st.expander("✏️ Edit Proyek"):
             with st.form("edit_proyek"):
-                new_nama = st.text_input("Nama Proyek", selected_row["nama_proyek"])
+                new_nama = st.text_input("Nama Proyek", selected_row["nama"])
                 new_klien = st.text_input("Klien", selected_row["klien"])
                 new_mulai = st.date_input("Tanggal Mulai", pd.to_datetime(selected_row["tanggal_mulai"]))
                 new_deadline = st.date_input("Deadline", pd.to_datetime(selected_row["deadline"]))
-                new_status = st.selectbox("Status", ["Berjalan", "Selesai", "Dibatalkan"], index=["Berjalan", "Selesai", "Dibatalkan"].index(selected_row["status"]))
+                new_status = st.selectbox("Status", ["Berjalan", "Selesai", "Dibatalkan"],
+                                          index=["Berjalan", "Selesai", "Dibatalkan"].index(selected_row["status"]))
                 new_keterangan = st.text_area("Keterangan", selected_row["keterangan"])
                 update = st.form_submit_button("Update")
                 if update:
@@ -71,6 +73,12 @@ def halaman_proyek():
             save_data(df, PROYEK_CSV)
             st.success("✅ Proyek berhasil dihapus!")
 
+        if st.button("📄 Cetak PDF Laporan Proyek"):
+            pdf_path = generate_proyek_pdf()
+            if pdf_path and os.path.exists(pdf_path):
+                with open(pdf_path, "rb") as f:
+                    st.download_button("⬇️ Download PDF", f, file_name="laporan_proyek.pdf")
+
     st.dataframe(df)
 
 def halaman_karyawan():
@@ -81,25 +89,30 @@ def halaman_karyawan():
     with st.form("form_karyawan"):
         nama = st.text_input("Nama")
         posisi = st.text_input("Posisi")
-        gaji = st.text_input("Gaji")
         email = st.text_input("Email")
-        status = st.selectbox("Status", ["Aktif", "NonAktif"])
+        nohp = st.text_input("No HP")
+        alamat = st.text_input("Alamat")
+        divisi = st.text_input("Divisi")
+        tanggal_masuk = st.date_input("Tanggal Masuk")
+        status_karyawan = st.selectbox("Status", ["Aktif", "Tidak Aktif"])
         simpan = st.form_submit_button("Simpan")
         if simpan:
             new_row = {
                 "id": len(df) + 1,
                 "nama": nama,
                 "posisi": posisi,
-                'gaji' : gaji,
                 "email": email,
-                "status": status
+                "nohp": nohp,
+                "alamat": alamat,
+                "divisi": divisi,
+                "tanggal_masuk": tanggal_masuk,
+                "status": status_karyawan
             }
             df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
             save_data(df, KARYAWAN_CSV)
             st.success("✅ Karyawan berhasil ditambahkan!")
 
     st.subheader("Daftar Karyawan")
-
     if not df.empty:
         df["index"] = df.index
         selected_index = st.selectbox("Pilih baris untuk Edit/Hapus", df["index"])
@@ -109,13 +122,16 @@ def halaman_karyawan():
             with st.form("edit_karyawan"):
                 new_nama = st.text_input("Nama", selected_row["nama"])
                 new_posisi = st.text_input("Posisi", selected_row["posisi"])
-                new_gaji = st.text_input("Gaji", selected_row["gaji"])
                 new_email = st.text_input("Email", selected_row["email"])
-                new_status = st.selectbox("Status", ["Aktif", "NonAktif"], index=["Aktif", "NonAktif"].index(selected_row["status"]))
+                new_nohp = st.text_input("No HP", selected_row["nohp"])
+                new_alamat = st.text_input("Alamat", selected_row["alamat"])
+                new_divisi = st.text_input("Divisi", selected_row["divisi"])
+                new_tanggal_masuk = st.date_input("Tanggal Masuk", pd.to_datetime(selected_row["tanggal_masuk"]))
+                new_status_karyawan = st.selectbox("Status", ["Aktif", "Tidak Aktif"], index=["Aktif", "Tidak Aktif"].index(selected_row["status"]))
                 update = st.form_submit_button("Update")
                 if update:
-                    df.loc[selected_index, ["nama", "posisi", "gaji", "email", "status"]] = [
-                        new_nama, new_posisi, new_email, new_gaji, new_status
+                    df.loc[selected_index, ["nama", "posisi", "email", "nohp", "alamat", "divisi", "tanggal_masuk", "status"]] = [
+                        new_nama, new_posisi, new_email, new_nohp, new_alamat, new_divisi, new_tanggal_masuk, new_status_karyawan
                     ]
                     save_data(df, KARYAWAN_CSV)
                     st.success("✅ Data karyawan berhasil diperbarui!")
@@ -125,16 +141,14 @@ def halaman_karyawan():
             save_data(df, KARYAWAN_CSV)
             st.success("✅ Data karyawan berhasil dihapus!")
 
+        if st.button("📄 Cetak PDF Laporan Karyawan"):
+            pdf_path = generate_karyawan_pdf()
+            if pdf_path and os.path.exists(pdf_path):
+                with open(pdf_path, "rb") as f:
+                    st.download_button("⬇️ Download PDF", f, file_name="laporan_karyawan.pdf")
+
     st.dataframe(df)
 
-    if st.button("📄 Cetak PDF Laporan Karyawan"):
-        pdf_path = generate_karyawan_pdf()
-        if pdf_path and os.path.exists(pdf_path):
-            with open(pdf_path, "rb") as f:
-                st.download_button("⬇️ Download PDF", f, file_name="laporan_karyawan.pdf")
-
-
-# Halaman Keuangan
 def halaman_keuangan():
     st.title("💰 Data Keuangan")
     df = load_data(KEUANGAN_CSV)
@@ -161,7 +175,6 @@ def halaman_keuangan():
             st.success("✅ Data keuangan disimpan!")
 
     st.subheader("Riwayat Keuangan")
-
     if not df.empty:
         df["index"] = df.index
         selected_index = st.selectbox("Pilih Baris untuk Edit/Hapus", df["index"])
@@ -170,9 +183,10 @@ def halaman_keuangan():
         with st.expander("✏️ Edit Data"):
             with st.form("edit_form"):
                 new_tanggal = st.date_input("Tanggal", pd.to_datetime(selected_row["tanggal"]))
-                new_jenis = st.selectbox("Jenis", ["Pemasukan", "Pengeluaran"], index=["Pemasukan", "Pengeluaran"].index(selected_row["jenis"]))
+                new_jenis = st.selectbox("Jenis", ["Pemasukan", "Pengeluaran"],
+                                         index=["Pemasukan", "Pengeluaran"].index(selected_row["jenis"]))
                 new_kategori = st.text_input("Kategori", selected_row["kategori"])
-                new_jumlah = st.number_input("Jumlah", value=int(selected_row["jumlah"]), min_value=0)
+                new_jumlah = st.number_input("Jumlah", value=int(selected_row["jumlah"]))
                 new_keterangan = st.text_input("Keterangan", selected_row["keterangan"])
                 update = st.form_submit_button("Update")
                 if update:
@@ -187,15 +201,13 @@ def halaman_keuangan():
             save_data(df, KEUANGAN_CSV)
             st.success("✅ Data berhasil dihapus!")
 
-    st.dataframe(df)
+        if st.button("📄 Cetak Laporan Keuangan ke PDF"):
+            pdf_path = generate_keuangan_pdf()
+            if pdf_path and os.path.exists(pdf_path):
+                with open(pdf_path, "rb") as f:
+                    st.download_button("⬇️ Download PDF", f, file_name="laporan_keuangan.pdf")
 
-    if st.button("📄 Cetak Laporan Keuangan ke PDF"):
-        pdf_path = generate_keuangan_pdf()
-        if pdf_path and os.path.exists(pdf_path):
-            with open(pdf_path, "rb") as f:
-                st.download_button("⬇️ Download PDF", f, file_name="laporan_keuangan.pdf")
-        else:
-            st.warning("⚠️ Gagal mencetak laporan. Data kosong atau error.")
+    st.dataframe(df)
 
 # Sidebar Navigasi
 st.sidebar.title("ERP Mini Perusahaan")
