@@ -34,7 +34,7 @@ def halaman_proyek():
         if simpan:
             new_row = {
                 "id": len(df)+1,
-                "nama": nama,
+                "nama": nama_proyek,
                 "klien": klien,
                 "tanggal_mulai": tanggal_mulai,
                 "deadline": deadline,
@@ -53,7 +53,7 @@ def halaman_proyek():
 
         with st.expander("✏️ Edit Proyek"):
             with st.form("edit_proyek"):
-                new_nama = st.text_input("Nama Proyek", selected_row["nama"])
+                new_nama = st.text_input("Nama Proyek", selected_row["nama_proyek"])
                 new_klien = st.text_input("Klien", selected_row["klien"])
                 new_mulai = st.date_input("Tanggal Mulai", pd.to_datetime(selected_row["tanggal_mulai"]))
                 new_deadline = st.date_input("Deadline", pd.to_datetime(selected_row["deadline"]))
